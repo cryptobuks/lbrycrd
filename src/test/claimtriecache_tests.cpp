@@ -1,5 +1,6 @@
 #include "claimtrie.h"
 #include "main.h"
+#include "uint256.h"
 
 #include "test/test_bitcoin.h"
 #include <boost/test/unit_test.hpp>
@@ -10,6 +11,12 @@ class CClaimTrieCacheTest : public CClaimTrieCache {
 public:
     CClaimTrieCacheTest(CClaimTrie* base):
         CClaimTrieCache(base, false){}
+
+    bool recursiveComputeMerkleHash(CClaimTrieNode* tnCurrent,
+                                    std::string sPos) const
+    {
+        return CClaimTrieCache::recursiveComputeMerkleHash(tnCurrent, sPos);
+    }
 
     bool recursivePruneName(CClaimTrieNode* tnCurrent, unsigned int nPos, std::string sName, bool* pfNullified) const
     {
@@ -28,6 +35,20 @@ public:
 };
 
 BOOST_FIXTURE_TEST_SUITE(claimtriecache_tests, RegTestingSetup)
+
+
+BOOST_AUTO_TEST_CASE(merklehash_test)
+{
+    // check empty trie
+    uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
+    CClaimTrieCacheTest cc(pclaimTrie);
+    BOOST_CHECK(one == cc.getMerkleHash());
+
+    // check trie with only root node
+    CClaimTrieNode base_node;
+    cc.recursiveComputeMerkleHash(&base_node, "");
+    BOOST_CHECK(one == cc.getMerkleHash());
+}
 
 BOOST_AUTO_TEST_CASE(recursiveprune_test)
 {
